@@ -5,7 +5,10 @@ import json
 import time
 import signal
 import sys
+import logging
 
+# logging config
+logging.basicConfig(level=logging.INFO, filename="bot.log",filemode="w")
 
 # getting token
 file = open('token.json')
@@ -22,13 +25,14 @@ files = []
 filesnot = [] # files, that can't be sent 
 
 if os.path.exists('filessent.txt'):
-    print('File exists. I will read')
+    logging.info("filessent.txt exists")
 
     with open('filessent.txt', 'r') as f:
         filessent = eval(f.read())  # WARNING: remote execution
 else:
     print("File not found")
     filessent = set() # blank filessent
+    logging.warning("Blank filessent")
 
 # SIGNAL HANDLER
 def signal_handler(sig, frame):
@@ -59,12 +63,12 @@ def send_files(message):
         try:
             # send files
             bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
-            print("Sent " + x) # TODO: LOGGING
+            logging.debug("Sent " + x)
         except telebot.apihelper.ApiTelegramException as e:
             if int(str(e).split()[10].strip(".")) == 429:
                 print(str(e))
                 sleeptime = int(str(e).split()[-1])
-                print("Sleeping", sleeptime) # TODO: LOGGING
+                logging.warning("Sleeping", sleeptime)
                 time.sleep(sleeptime)
                 bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
             else:
@@ -77,6 +81,7 @@ def send_files(message):
             print(e)
             with open('filessent.txt', 'w') as f:
                 f.write(str(filessent))
+                logging.warning("Filessent has written")
         finally:
             filessent.add(x)
 
