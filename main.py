@@ -1,8 +1,3 @@
-#### TODO
-#### СОРТИРОВАТЬ ФАЙЛЫ ПО РАЗМЕРУ [X]
-#### СПИСОК ОТПРАВЛЕННЫХ ФАЙЛОВ [X] 
-
-
 import telebot
 from telebot import types
 import os
@@ -11,12 +6,18 @@ import time
 import signal
 import sys
 
+
+# getting token
 file = open('token.json')
 data = json.load(file)
 bot = telebot.TeleBot(data['token'])
+
+# global vars
+startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/au'
 chat_id = '-1002005120232'
 maxfilesize = 50*2**20
 
+# global arrs
 files = []
 filesnot = [] # files, that can't be sent 
 
@@ -25,10 +26,9 @@ if os.path.exists('filessent.txt'):
 
     with open('filessent.txt', 'r') as f:
         filessent = eval(f.read())  # WARNING: remote execution
-        #print(filessent)
 else:
     print("File not found")
-    filessent = set()
+    filessent = set() # blank filessent
 
 # SIGNAL HANDLER
 def signal_handler(sig, frame):
@@ -40,33 +40,31 @@ signal.signal(signal.SIGINT, signal_handler)
 
 def listallfiles(startpath):
     for filename in os.listdir(startpath):
-        fullname = startpath + "/" + filename
-        fullname = fullname.strip()
+        fullname = startpath + "/" + filename # just a nice costyl (dog-nail)
+        fullname = fullname.strip() # delete shit from fullname
         if os.path.isdir(fullname):
-            listallfiles(fullname)
+            listallfiles(fullname) # just a recursive func
         elif filename.lower().endswith(('.flac', '.mp3')):
-            if os.path.getsize(fullname) <= maxfilesize and fullname not in filessent:
-                #print(fullname + " posted")
+            if os.path.getsize(fullname) <= maxfilesize and fullname not in filessent: # check if size is nice
                 files.append(fullname)
-            elif os.path.getsize(fullname) >= maxfilesize:
-                #print(fullname + " can't be posted")
+            elif os.path.getsize(fullname) >= maxfilesize: # important compare
                 filesnot.append(fullname)
                 with open('filesnot.txt', 'w') as f:
                     f.write(str(filesnot))
 
 @bot.message_handler(commands=['start'])
 def send_files(message):
-    startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/au'
     listallfiles(startpath)
     for x in files:
         try:
+            # send files
             bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
-            print("Sent " + x)
+            print("Sent " + x) # TODO: LOGGING
         except telebot.apihelper.ApiTelegramException as e:
             if int(str(e).split()[10].strip(".")) == 429:
                 print(str(e))
                 sleeptime = int(str(e).split()[-1])
-                print("Sleeping", sleeptime)
+                print("Sleeping", sleeptime) # TODO: LOGGING
                 time.sleep(sleeptime)
                 bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
             else:
