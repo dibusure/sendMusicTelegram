@@ -7,7 +7,6 @@ import telebot
 from telebot import types
 import os
 import json
-import glob
 import time
 
 def listfiles(folder):
@@ -24,9 +23,15 @@ maxfilesize = 50*2**20
 files = []
 filesnot = [] # files, that can't be sent 
 if os.path.exists('filessent.txt'):
-    with open('filessent.txt', 'r') as f:
+    print('File exists. I will read')
+
+    document = open('filessent.txt', 'rb')
+    bot.send_document(chat_id=chat_id, document=document)
+
+    with open('filessent.txt', 'rb') as f:
         filessent = eval(f.read()) # WARNING: remote execution
 else:
+    print("File not found")
     filessent = set()
 
 def listallfiles(startpath):
@@ -36,8 +41,11 @@ def listallfiles(startpath):
             listallfiles(fullname)
         elif filename.lower().endswith(('.flac', '.mp3')):
             if os.path.getsize(fullname) <= maxfilesize and fullname not in filessent:
-                files.append(fullname)
+                if fullname not in filessent:
+                    print(fullname + " posted")
+                    files.append(fullname)
             else:
+                print(fullname + " can't be posted")
                 filesnot.append(fullname)
 
 with open('filesnot.txt', 'w') as f:
