@@ -8,48 +8,51 @@ from telebot import types
 import os
 import json
 import time
-
-def listfiles(folder):
-    for root, folders, files in os.walk(folder):
-        for filename in folders + files:
-            yield os.path.join(root, filename)
+import signal
+import sys
 
 file = open('token.json')
 data = json.load(file)
 bot = telebot.TeleBot(data['token'])
-chat_id = '-1002137811828'
+chat_id = '-1002005120232'
 maxfilesize = 50*2**20
 
 files = []
 filesnot = [] # files, that can't be sent 
+
 if os.path.exists('filessent.txt'):
     print('File exists. I will read')
 
-    document = open('filessent.txt', 'rb')
-    bot.send_document(chat_id=chat_id, document=document)
-
-    with open('filessent.txt', 'rb') as f:
-        filessent = eval(f.read()) # WARNING: remote execution
+    with open('filessent.txt', 'r') as f:
+        filessent = eval(f.read())  # WARNING: remote execution
+        #print(filessent)
 else:
     print("File not found")
     filessent = set()
 
+# SIGNAL HANDLER
+def signal_handler(sig, frame):
+    with open('filessent.txt', 'w') as f:
+        f.write(str(filessent))
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 def listallfiles(startpath):
     for filename in os.listdir(startpath):
         fullname = startpath + "/" + filename
+        fullname = fullname.strip()
         if os.path.isdir(fullname):
             listallfiles(fullname)
         elif filename.lower().endswith(('.flac', '.mp3')):
             if os.path.getsize(fullname) <= maxfilesize and fullname not in filessent:
-                if fullname not in filessent:
-                    print(fullname + " posted")
-                    files.append(fullname)
+                #print(fullname + " posted")
+                files.append(fullname)
             else:
-                print(fullname + " can't be posted")
+                #print(fullname + " can't be posted")
                 filesnot.append(fullname)
-
-with open('filesnot.txt', 'w') as f:
-    f.write(str(filesnot))
+                with open('filesnot.txt', 'w') as f:
+                    f.write(str(filesnot))
 
 @bot.message_handler(commands=['start'])
 def send_files(message):
@@ -58,6 +61,7 @@ def send_files(message):
     for x in files:
         try:
             bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
+            print("Sent " + x)
         except telebot.apihelper.ApiTelegramException as e:
             if int(str(e).split()[10].strip(".")) == 429:
                 print(str(e))
@@ -69,6 +73,12 @@ def send_files(message):
                 print(e)
                 with open('filessent.txt', 'w') as f:
                     f.write(str(filessent))
+                return 
+            
+        except Exception as e:
+            print(e)
+            with open('filessent.txt', 'w') as f:
+                f.write(str(filessent))
         finally:
             filessent.add(x)
 
