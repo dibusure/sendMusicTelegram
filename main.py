@@ -48,7 +48,7 @@ def listallfiles(startpath):
             if os.path.getsize(fullname) <= maxfilesize and fullname not in filessent:
                 #print(fullname + " posted")
                 files.append(fullname)
-            else:
+            elif os.path.getsize(fullname) >= maxfilesize:
                 #print(fullname + " can't be posted")
                 filesnot.append(fullname)
                 with open('filesnot.txt', 'w') as f:
