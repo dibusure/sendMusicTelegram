@@ -6,6 +6,7 @@ import time
 import signal
 import sys
 import logging
+import shutil
 
 # logging config
 logging.basicConfig(level=logging.INFO, filename="bot.log",filemode="w")
@@ -17,8 +18,9 @@ bot = telebot.TeleBot(data['token'])
 
 # global vars
 startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/au'
-chat_id = '-1002005120232'
+chat_id = '-1002038295546'
 maxfilesize = 50*2**20
+filesnotpath = startpath + "/" + "filesnot"
 
 # global arrs
 files = []
@@ -55,6 +57,17 @@ def listallfiles(startpath):
                 filesnot.append(fullname)
                 with open('filesnot.txt', 'w') as f:
                     f.write(str(filesnot))
+
+def copyfilesnot(filesnot, filesnotpath):
+    if os.path.isdir(filesnotpath) == False: 
+        os.mkdir(filesnotpath)
+
+    for x in filesnot:
+        shutil.copy(x, filesnotpath)
+        print("Copied", x)
+    print("done")
+
+copyfilesnot(filesnot, filesnotpath)
 
 @bot.message_handler(commands=['start'])
 def send_files(message):
