@@ -25,6 +25,7 @@ filesnotpath = startpath + "/" + "filesnot"
 # global arrs
 files = []
 filesnot = [] # files, that can't be sent 
+filesnotcopied = [] # for interrupt
 
 if os.path.exists('filessent.txt'):
     logging.info("filessent.txt exists")
@@ -42,6 +43,10 @@ def signal_handler(sig, frame):
         f.write(str(filessent))
     sys.exit(0)
 
+    with open('filesnot.txt', 'w') as f:
+        f.write(str(filesnotcopied))
+    sys.exit(0)
+
 signal.signal(signal.SIGINT, signal_handler)
 
 def listallfiles(startpath):
@@ -50,7 +55,7 @@ def listallfiles(startpath):
         fullname = fullname.strip() # delete shit from fullname
         if os.path.isdir(fullname):
             listallfiles(fullname) # just a recursive func
-        elif filename.lower().endswith(('.flac', '.mp3')):
+        elif filename.lower().endswith(('.flac', '.mp3', '.alac')):
             if os.path.getsize(fullname) <= maxfilesize and fullname not in filessent: # check if size is nice
                 files.append(fullname)
             elif os.path.getsize(fullname) >= maxfilesize: # important compare
@@ -65,12 +70,13 @@ def copyfilesnot(filesnot, filesnotpath):
     for x in filesnot:
         shutil.copy(x, filesnotpath)
         print("Copied", x)
+        filesnotcopied.append(x)
     print("done")
-
-copyfilesnot(filesnot, filesnotpath)
 
 @bot.message_handler(commands=['start'])
 def send_files(message):
+    copyfilesnot(filesnot, filesnotpath)
+
     listallfiles(startpath)
     for x in files:
         try:
