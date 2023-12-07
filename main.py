@@ -6,7 +6,6 @@ import time
 import signal
 import sys
 import shutil
-import yt_dlp
 
 # getting token
 file = open('token.json')
@@ -15,7 +14,7 @@ bot = telebot.TeleBot(data['token'])
 
 # global vars
 startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/mu'
-chat_id = '-1002038295546'
+chat_id = '-1002116064355'
 maxfilesize = 50*2**20
 filesnotpath = startpath + "/" + "filesnot"
 
@@ -23,7 +22,6 @@ filesnotpath = startpath + "/" + "filesnot"
 files = []
 filesnot = [] # files, that can't be sent 
 filesnotcopied = [] # for interrupt
-downloaded =[]
 
 if os.path.exists('filessent.txt'):
     with open('filessent.txt', 'r') as f:
@@ -40,9 +38,6 @@ def signal_handler(sig, frame):
 
     with open('filesnot.txt', 'w') as f:
         f.write(str(filesnotcopied))
-
-    with open("downloaded.txt", 'w') as f:
-        f.write(str(downloaded))
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -98,44 +93,5 @@ def send_files(message):
                 f.write(str(filessent))
         finally:
             filessent.add(x)
-
-@bot.message_handler(commands=['down'])
-def downloadfiles(message):
-    if len(sys.argv) == 0:
-        print("Please use:\npython main.py [FILE]\inWhere [FILE] is a path to file with youtube/YTM links for playlists/albums")
-        sys.exit(-1)
-    else:
-        if os.path.exists(sys.argv[1]):
-            with open(sys.argv[1], 'r') as f:
-                links = (f.read()).split("\n")  # WARNING: remote execution
-                links = [i.strip(' ') for i in links]
-                links = [i.strip('') for i in links]
-        else:
-            print("File not found")
-            sys.exit(-1)
-
-    ytdl_opts = {
-        'outtmpl': startpath + "/" + '%(artist)s/%(release_year)s - %(album)s/%(title)s',
-        'format': 'bestaudio/best',
-        'extractaudio':True,
-        'audioformat':'flac',
-        'addmetadata':True,
-        'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            },
-            {
-                'key': 'FFmpegMetadata'
-            }]
-    }
-
-    while downloaded != links:
-        with yt_dlp.YoutubeDL(ytdl_opts) as ytdl:
-            for i in links:
-                ytdl.download([i])
-                print("Downloaded", i)
-                downloaded.append(i)
-            print("Done")
 
 bot.polling(none_stop=True, interval=0)
