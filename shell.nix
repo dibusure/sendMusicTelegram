@@ -1,5 +1,6 @@
 with import <nixpkgs> {};
-(python310.withPackages (ps: with ps; [
+(python311.withPackages (ps: with ps; [
+  python311Packages.yt-dlp
   pytelegrambotapi
   requests
   pip

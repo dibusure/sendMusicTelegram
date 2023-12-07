@@ -5,11 +5,8 @@ import json
 import time
 import signal
 import sys
-import logging
 import shutil
-
-# logging config
-logging.basicConfig(level=logging.INFO, filename="bot.log",filemode="w")
+import yt_dlp
 
 # getting token
 file = open('token.json')
@@ -17,7 +14,7 @@ data = json.load(file)
 bot = telebot.TeleBot(data['token'])
 
 # global vars
-startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/au'
+startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/mu'
 chat_id = '-1002038295546'
 maxfilesize = 50*2**20
 filesnotpath = startpath + "/" + "filesnot"
@@ -26,25 +23,26 @@ filesnotpath = startpath + "/" + "filesnot"
 files = []
 filesnot = [] # files, that can't be sent 
 filesnotcopied = [] # for interrupt
+downloaded =[]
 
 if os.path.exists('filessent.txt'):
-    logging.info("filessent.txt exists")
-
     with open('filessent.txt', 'r') as f:
         filessent = eval(f.read())  # WARNING: remote execution
 else:
     print("File not found")
     filessent = set() # blank filessent
-    logging.warning("Blank filessent")
+
 
 # SIGNAL HANDLER
 def signal_handler(sig, frame):
     with open('filessent.txt', 'w') as f:
         f.write(str(filessent))
-    sys.exit(0)
 
     with open('filesnot.txt', 'w') as f:
         f.write(str(filesnotcopied))
+
+    with open("downloaded.txt", 'w') as f:
+        f.write(str(downloaded))
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -71,9 +69,9 @@ def copyfilesnot(filesnot, filesnotpath):
         shutil.copy(x, filesnotpath)
         print("Copied", x)
         filesnotcopied.append(x)
-    print("done")
+    print("Done")
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=['send'])
 def send_files(message):
     copyfilesnot(filesnot, filesnotpath)
 
@@ -82,12 +80,10 @@ def send_files(message):
         try:
             # send files
             bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
-            logging.debug("Sent " + x)
         except telebot.apihelper.ApiTelegramException as e:
             if int(str(e).split()[10].strip(".")) == 429:
                 print(str(e))
                 sleeptime = int(str(e).split()[-1])
-                logging.warning("Sleeping", sleeptime)
                 time.sleep(sleeptime)
                 bot.send_audio(chat_id=chat_id, audio=open(x, 'rb'))
             else:
@@ -100,9 +96,46 @@ def send_files(message):
             print(e)
             with open('filessent.txt', 'w') as f:
                 f.write(str(filessent))
-                logging.warning("Filessent has written")
         finally:
             filessent.add(x)
 
+@bot.message_handler(commands=['down'])
+def downloadfiles(message):
+    if len(sys.argv) == 0:
+        print("Please use:\npython main.py [FILE]\inWhere [FILE] is a path to file with youtube/YTM links for playlists/albums")
+        sys.exit(-1)
+    else:
+        if os.path.exists(sys.argv[1]):
+            with open(sys.argv[1], 'r') as f:
+                links = (f.read()).split("\n")  # WARNING: remote execution
+                links = [i.strip(' ') for i in links]
+                links = [i.strip('') for i in links]
+        else:
+            print("File not found")
+            sys.exit(-1)
+
+    ytdl_opts = {
+        'outtmpl': startpath + "/" + '%(artist)s/%(release_year)s - %(album)s/%(title)s',
+        'format': 'bestaudio/best',
+        'extractaudio':True,
+        'audioformat':'flac',
+        'addmetadata':True,
+        'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            },
+            {
+                'key': 'FFmpegMetadata'
+            }]
+    }
+
+    while downloaded != links:
+        with yt_dlp.YoutubeDL(ytdl_opts) as ytdl:
+            for i in links:
+                ytdl.download([i])
+                print("Downloaded", i)
+                downloaded.append(i)
+            print("Done")
 
 bot.polling(none_stop=True, interval=0)
