@@ -13,8 +13,16 @@ data = json.load(file)
 bot = telebot.TeleBot(data['token'])
 
 # global vars
-startpath = '/run/media/dibusure/aafb7d0a-ca65-4095-b889-daa30025b67f/mu'
-chat_id = '-1002116064355'
+if sys.argv[1] == "metal":
+    startpath = '/run/media/dibusure/Files/Music' + '/metal'
+    chat_id = '-1001681284273'
+elif sys.argv[1] == "soft":
+    startpath = '/run/media/dibusure/Files/Music/soft'
+    chat_id = '-1001681341097'
+else:
+   print('please specify the channel name') 
+   sys.exit(0)
+
 maxfilesize = 50*2**20
 filesnotpath = startpath + "/" + "filesnot"
 
@@ -66,7 +74,7 @@ def copyfilesnot(filesnot, filesnotpath):
         filesnotcopied.append(x)
     print("Done")
 
-@bot.message_handler(commands=['send'])
+@bot.message_handler(commands=['s'])
 def send_files(message):
     copyfilesnot(filesnot, filesnotpath)
 
