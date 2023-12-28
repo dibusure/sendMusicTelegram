@@ -15,10 +15,10 @@ bot = telebot.TeleBot(data['token'])
 # global vars
 if sys.argv[1] == "metal":
     startpath = '/run/media/dibusure/Files/Music' + '/metal'
-    chat_id = '-1001681284273'
+    chat_id = '-1001584911982'
 elif sys.argv[1] == "soft":
     startpath = '/run/media/dibusure/Files/Music/soft'
-    chat_id = '-1001681341097'
+    chat_id = '-1002077740939'
 else:
    print('please specify the channel name') 
    sys.exit(0)
