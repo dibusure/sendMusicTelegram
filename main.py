@@ -18,7 +18,7 @@ if sys.argv[1] == "metal":
     chat_id = '-1001584911982'
 elif sys.argv[1] == "soft":
     startpath = '/run/media/dibusure/Files/Music/soft'
-    chat_id = '-1001998259328'
+    chat_id = '-1002077740939'
 else:
    print('please specify the channel name') 
    sys.exit(0)
